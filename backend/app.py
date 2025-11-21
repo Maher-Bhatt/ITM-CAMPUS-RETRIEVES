@@ -1,3 +1,6 @@
+from flask_cors import CORS
+# after app = Flask(__name__)
+CORS(app)  # allow all origins; for production restrict origins to your Vercel domain
 from flask import Flask, render_template, request, redirect, url_for, session
 import sqlite3, os
 from werkzeug.utils import secure_filename
@@ -128,4 +131,5 @@ def logout():
 
 if __name__ == "__main__":
     app.run()
+
 
