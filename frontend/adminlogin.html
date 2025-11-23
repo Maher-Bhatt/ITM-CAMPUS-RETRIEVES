@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Console - ITM Retrieve</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #020617 0%, #1e1b4b 50%, #111827 100%);
+            min-height: 100vh;
+            color: #f8fafc;
+        }
+
+        /* Glassmorphism */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+        }
+
+        /* Animations */
+        .fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="antialiased overflow-x-hidden">
+
+    <!-- LOGIN VIEW -->
+    <section id="login-view" class="min-h-screen flex items-center justify-center p-4 relative z-50">
+        <div class="absolute inset-0 overflow-hidden z-0 pointer-events-none">
+            <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl"></div>
+            <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl"></div>
+        </div>
+
+        <div class="glass-panel p-8 md:p-12 rounded-3xl shadow-2xl max-w-md w-full relative z-10 border-t border-white/10">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-gradient-to-tr from-cyan-500 to-blue-600 rounded-2xl mx-auto flex items-center justify-center shadow-lg shadow-cyan-500/20 mb-4">
+                    <i class="fas fa-shield-alt text-2xl text-white"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-white tracking-wide">Admin Access</h1>
+                <p class="text-gray-400 text-sm mt-1">ITM Campus Retrieve System</p>
+            </div>
+
+            <form onsubmit="handleLogin(event)" class="space-y-6">
+                <div>
+                    <label class="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Username</label>
+                    <div class="relative mt-1">
+                        <i class="fas fa-user absolute left-4 top-3.5 text-gray-500"></i>
+                        <input type="text" id="admin-user" class="w-full bg-gray-900/50 border border-gray-700 text-white pl-10 pr-4 py-3 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition" placeholder="Enter username">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Password</label>
+                    <div class="relative mt-1">
+                        <i class="fas fa-lock absolute left-4 top-3.5 text-gray-500"></i>
+                        <input type="password" id="admin-pass" class="w-full bg-gray-900/50 border border-gray-700 text-white pl-10 pr-4 py-3 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition" placeholder="Enter password">
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-500/30 transition transform hover:scale-[1.02]">
+                    AUTHENTICATE
+                </button>
+            </form>
+            <p id="login-error" class="text-red-400 text-center text-sm mt-4 hidden"><i class="fas fa-exclamation-triangle mr-1"></i> Invalid Credentials</p>
+        </div>
+    </section>
+
+    <!-- DASHBOARD VIEW -->
+    <section id="dashboard-view" class="hidden min-h-screen flex flex-col md:flex-row">
+        
+        <!-- Sidebar -->
+        <aside class="w-full md:w-64 bg-slate-900/80 backdrop-blur-xl border-r border-white/5 flex-shrink-0 z-40">
+            <div class="p-6 flex items-center gap-3 border-b border-white/5">
+                <div class="w-8 h-8 bg-gradient-to-tr from-cyan-500 to-blue-600 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-shield-alt text-white text-xs"></i>
+                </div>
+                <span class="font-bold text-gray-100 tracking-wide">Admin Console</span>
+            </div>
+            
+            <nav class="p-4 space-y-2">
+                <button onclick="switchTab('overview')" id="btn-overview" class="w-full text-left px-4 py-3 rounded-xl bg-white/5 text-cyan-400 font-medium border border-white/5 transition">
+                    <i class="fas fa-chart-pie w-6"></i> Overview
+                </button>
+                <button onclick="switchTab('lost')" id="btn-lost" class="w-full text-left px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 font-medium transition">
+                    <i class="fas fa-search w-6"></i> Lost Items <span id="badge-lost" class="ml-auto bg-red-500/20 text-red-400 text-xs px-2 py-0.5 rounded-full">0</span>
+                </button>
+                <button onclick="switchTab('found')" id="btn-found" class="w-full text-left px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 font-medium transition">
+                    <i class="fas fa-box-open w-6"></i> Found Items <span id="badge-found" class="ml-auto bg-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5 rounded-full">0</span>
+                </button>
+            </nav>
+
+            <div class="p-4 mt-auto border-t border-white/5 absolute bottom-0 w-full">
+                <button onclick="logout()" class="w-full flex items-center gap-2 text-gray-400 hover:text-red-400 transition px-4 py-2">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-6 md:p-10 overflow-y-auto h-screen relative">
+            
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-8">
+                <h2 id="page-title" class="text-2xl font-bold text-white">Dashboard Overview</h2>
+                <div class="flex gap-3">
+                    <button onclick="refreshData()" class="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-300 transition" title="Refresh Data">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- CONTENT: OVERVIEW -->
+            <div id="tab-overview" class="fade-in space-y-6">
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
+                        <div class="absolute right-0 top-0 w-24 h-24 bg-red-500/10 rounded-bl-full transition group-hover:bg-red-500/20"></div>
+                        <h3 class="text-gray-400 font-medium text-sm uppercase tracking-wider">Reported Lost</h3>
+                        <p class="text-4xl font-bold text-white mt-2" id="stat-lost-count">0</p>
+                        <div class="mt-4 text-xs text-red-400 flex items-center"><i class="fas fa-arrow-up mr-1"></i> Active Cases</div>
+                    </div>
+
+                    <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
+                        <div class="absolute right-0 top-0 w-24 h-24 bg-emerald-500/10 rounded-bl-full transition group-hover:bg-emerald-500/20"></div>
+                        <h3 class="text-gray-400 font-medium text-sm uppercase tracking-wider">Items Found</h3>
+                        <p class="text-4xl font-bold text-white mt-2" id="stat-found-count">0</p>
+                        <div class="mt-4 text-xs text-emerald-400 flex items-center"><i class="fas fa-check mr-1"></i> In Custody</div>
+                    </div>
+
+                    <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
+                        <div class="absolute right-0 top-0 w-24 h-24 bg-blue-500/10 rounded-bl-full transition group-hover:bg-blue-500/20"></div>
+                        <h3 class="text-gray-400 font-medium text-sm uppercase tracking-wider">System Health</h3>
+                        <p class="text-4xl font-bold text-white mt-2">100%</p>
+                        <div class="mt-4 text-xs text-blue-400 flex items-center"><i class="fas fa-database mr-1"></i> Local Storage Sync</div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="glass-panel p-6 rounded-2xl border border-white/5">
+                    <h3 class="font-bold text-lg mb-4 text-gray-200">Administrative Tools</h3>
+                    <div class="flex flex-wrap gap-4">
+                        <button onclick="downloadCSV()" class="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
+                            <i class="fas fa-download"></i> Export Data (CSV)
+                        </button>
+                        <button onclick="clearAllData()" class="bg-red-900/30 hover:bg-red-900/50 text-red-400 border border-red-500/30 px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
+                            <i class="fas fa-trash-alt"></i> Nuke All Data (Debug)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CONTENT: LOST TABLE -->
+            <div id="tab-lost" class="hidden fade-in">
+                <div class="glass-panel rounded-2xl overflow-hidden border border-white/5">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-white/5 border-b border-white/5 text-gray-400 text-xs uppercase tracking-wider">
+                                    <th class="p-4">Item Details</th>
+                                    <th class="p-4">Location</th>
+                                    <th class="p-4">Contact</th>
+                                    <th class="p-4">Image</th>
+                                    <th class="p-4 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-lost-body" class="divide-y divide-white/5 text-sm text-gray-300">
+                                <!-- JS Injected -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="empty-lost" class="p-8 text-center text-gray-500 hidden">No active lost reports.</div>
+                </div>
+            </div>
+
+            <!-- CONTENT: FOUND TABLE -->
+            <div id="tab-found" class="hidden fade-in">
+                <div class="glass-panel rounded-2xl overflow-hidden border border-white/5">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-white/5 border-b border-white/5 text-gray-400 text-xs uppercase tracking-wider">
+                                    <th class="p-4">Item Details</th>
+                                    <th class="p-4">Location</th>
+                                    <th class="p-4">Finder Email</th>
+                                    <th class="p-4">Security Q</th>
+                                    <th class="p-4 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-found-body" class="divide-y divide-white/5 text-sm text-gray-300">
+                                <!-- JS Injected -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="empty-found" class="p-8 text-center text-gray-500 hidden">No items currently in custody.</div>
+                </div>
+            </div>
+
+        </main>
+    </section>
+
+    <!-- IMAGE PREVIEW MODAL -->
+    <div id="img-modal" class="fixed inset-0 bg-black/90 hidden z-50 flex items-center justify-center p-4" onclick="this.classList.add('hidden')">
+        <img id="modal-img" src="" class="max-w-full max-h-full rounded-lg shadow-2xl border border-white/20">
+    </div>
+
+    <script>
+        // --- CONFIG ---
+        // In a real app, do NOT store passwords in client-side JS.
+        const ADMIN_CREDS = { user: "admin", pass: "itm" }; 
+        
+        let foundItems = [];
+        let lostItems = [];
+
+        // --- AUTHENTICATION ---
+        function checkAuth() {
+            const session = sessionStorage.getItem("itm_admin_session");
+            if(session === "true") {
+                showDashboard();
+            }
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const u = document.getElementById('admin-user').value;
+            const p = document.getElementById('admin-pass').value;
+            
+            if(u === ADMIN_CREDS.user && p === ADMIN_CREDS.pass) {
+                sessionStorage.setItem("itm_admin_session", "true");
+                showDashboard();
+            } else {
+                const err = document.getElementById('login-error');
+                err.classList.remove('hidden');
+                err.classList.add('animate-pulse');
+            }
+        }
+
+        function logout() {
+            sessionStorage.removeItem("itm_admin_session");
+            location.reload();
+        }
+
+        function showDashboard() {
+            document.getElementById('login-view').classList.add('hidden');
+            document.getElementById('dashboard-view').classList.remove('hidden');
+            loadData();
+        }
+
+        // --- DATA LOGIC ---
+        function loadData() {
+            // Read from LocalStorage (Shared with User Site)
+            const f = localStorage.getItem('foundItems');
+            const l = localStorage.getItem('lostItems');
+
+            foundItems = f ? JSON.parse(f) : [];
+            lostItems = l ? JSON.parse(l) : [];
+
+            updateStats();
+            renderTables();
+        }
+
+        function updateStats() {
+            document.getElementById('stat-lost-count').innerText = lostItems.length;
+            document.getElementById('badge-lost').innerText = lostItems.length;
+            
+            document.getElementById('stat-found-count').innerText = foundItems.length;
+            document.getElementById('badge-found').innerText = foundItems.length;
+        }
+
+        function refreshData() {
+            loadData();
+            // Simple visual feedback
+            const btn = document.querySelector('.fa-sync-alt');
+            btn.classList.add('fa-spin');
+            setTimeout(() => btn.classList.remove('fa-spin'), 1000);
+        }
+
+        // --- RENDER LOGIC ---
+        function renderTables() {
+            // Render Lost Table
+            const lostBody = document.getElementById('table-lost-body');
+            lostBody.innerHTML = '';
+            if(lostItems.length === 0) document.getElementById('empty-lost').classList.remove('hidden');
+            else {
+                document.getElementById('empty-lost').classList.add('hidden');
+                lostItems.forEach((item, index) => {
+                    lostBody.innerHTML += `
+                        <tr class="hover:bg-white/5 transition group">
+                            <td class="p-4">
+                                <div class="font-bold text-white">${item.name}</div>
+                                <div class="text-xs text-gray-500">${item.cat} • ${item.date}</div>
+                                <div class="text-xs text-gray-400 italic mt-1">"${item.desc}"</div>
+                            </td>
+                            <td class="p-4 text-gray-300">${item.loc}</td>
+                            <td class="p-4"><a href="mailto:${item.email}" class="text-blue-400 hover:underline">${item.email}</a></td>
+                            <td class="p-4">
+                                ${item.image ? `<img src="${item.image}" onclick="viewImage('${item.image}')" class="w-10 h-10 rounded object-cover border border-white/20 cursor-zoom-in hover:scale-150 transition origin-left">` : '<span class="text-gray-600 text-xs">No Img</span>'}
+                            </td>
+                            <td class="p-4 text-right">
+                                <button onclick="deleteItem('lost', ${index})" class="text-gray-500 hover:text-red-400 transition p-2" title="Delete Report">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                <button onclick="resolveItem('lost', ${index})" class="bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500 hover:text-white text-xs font-bold px-3 py-1 rounded-lg transition ml-2">
+                                    RESOLVE
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+
+            // Render Found Table
+            const foundBody = document.getElementById('table-found-body');
+            foundBody.innerHTML = '';
+            if(foundItems.length === 0) document.getElementById('empty-found').classList.remove('hidden');
+            else {
+                document.getElementById('empty-found').classList.add('hidden');
+                foundItems.forEach((item, index) => {
+                    foundBody.innerHTML += `
+                        <tr class="hover:bg-white/5 transition">
+                            <td class="p-4">
+                                <div class="font-bold text-white">${item.name}</div>
+                                <div class="text-xs text-gray-500">${item.cat} • ${item.date}</div>
+                            </td>
+                            <td class="p-4 text-gray-300">${item.loc}</td>
+                            <td class="p-4"><a href="mailto:${item.email}" class="text-blue-400 hover:underline">${item.email}</a></td>
+                            <td class="p-4 text-yellow-200/80 font-mono text-xs border-l-2 border-yellow-500/20 pl-3">
+                                ${item.desc || "No Data"}
+                            </td>
+                            <td class="p-4 text-right">
+                                <button onclick="deleteItem('found', ${index})" class="text-gray-500 hover:text-red-400 transition p-2">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                <button onclick="resolveItem('found', ${index})" class="bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500 hover:text-white text-xs font-bold px-3 py-1 rounded-lg transition ml-2">
+                                    RETURNED
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+        }
+
+        // --- ACTIONS ---
+        function deleteItem(type, index) {
+            if(!confirm("Are you sure you want to delete this report?")) return;
+            
+            if(type === 'lost') {
+                lostItems.splice(index, 1);
+                localStorage.setItem('lostItems', JSON.stringify(lostItems));
+            } else {
+                foundItems.splice(index, 1);
+                localStorage.setItem('foundItems', JSON.stringify(foundItems));
+            }
+            loadData();
+        }
+
+        function resolveItem(type, index) {
+            const msg = type === 'lost' ? "Mark this item as found?" : "Confirm this item has been returned to owner?";
+            if(!confirm(msg)) return;
+
+            if(type === 'lost') {
+                lostItems.splice(index, 1);
+                localStorage.setItem('lostItems', JSON.stringify(lostItems));
+            } else {
+                foundItems.splice(index, 1);
+                localStorage.setItem('foundItems', JSON.stringify(foundItems));
+            }
+            loadData();
+            alert("Item resolved successfully.");
+        }
+
+        function clearAllData() {
+            if(confirm("WARNING: This will wipe all Lost & Found data from the browser. Continue?")) {
+                localStorage.removeItem('foundItems');
+                localStorage.removeItem('lostItems');
+                loadData();
+            }
+        }
+
+        // --- UI UTILS ---
+        function switchTab(tabName) {
+            // Hide all content
+            ['overview', 'lost', 'found'].forEach(t => {
+                document.getElementById(`tab-${t}`).classList.add('hidden');
+                const btn = document.getElementById(`btn-${t}`);
+                btn.classList.remove('bg-white/5', 'text-cyan-400');
+                btn.classList.add('text-gray-400');
+            });
+
+            // Show selected
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+            
+            // Style Button
+            const activeBtn = document.getElementById(`btn-${tabName}`);
+            activeBtn.classList.add('bg-white/5', 'text-cyan-400');
+            activeBtn.classList.remove('text-gray-400');
+
+            // Update Title
+            const titles = { 'overview': 'Dashboard Overview', 'lost': 'Lost Reports Management', 'found': 'Found Items Inventory' };
+            document.getElementById('page-title').innerText = titles[tabName];
+        }
+
+        function viewImage(src) {
+            document.getElementById('modal-img').src = src;
+            document.getElementById('img-modal').classList.remove('hidden');
+        }
+
+        function downloadCSV() {
+            let csvContent = "data:text/csv;charset=utf-8,Type,Name,Category,Location,Date,Email,Description\n";
+            
+            lostItems.forEach(i => {
+                csvContent += `LOST,${i.name},${i.cat},${i.loc},${i.date},${i.email},"${i.desc}"\n`;
+            });
+            foundItems.forEach(i => {
+                csvContent += `FOUND,${i.name},${i.cat},${i.loc},${i.date},${i.email},"${i.desc}"\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "itm_retrieve_data.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Initialize
+        checkAuth();
+
+    </script>
+</body>
+</html>
